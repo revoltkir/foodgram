@@ -1,3 +1,9 @@
 from django.shortcuts import render
+from rest_framework import viewsets
+from recipes.models import Recipe
+from .serializers import RecipeReadSerializer
 
-# Create your views here.
+class RecipeViewSet(viewsets.ReadOnlyModelViewSet):
+    """Вьюсет для отображения списка рецептов и одного рецепта."""
+    queryset = Recipe.objects.all()
+    serializer_class = RecipeReadSerializer
