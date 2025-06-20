@@ -2,7 +2,7 @@ from django.db import models
 from django.core.validators import RegexValidator, MinValueValidator
 from django.contrib.auth import get_user_model
 
-from constants import *
+from .constants import *
 
 User = get_user_model()
 
@@ -17,13 +17,15 @@ class Tag(models.Model):
     )
     color = models.CharField(
         max_length=7,
-        unique=True,
+        blank=True,
+        null=True,
         verbose_name='Цвет (HEX)',
         help_text='HEX-код цвета, например #49B64E',
         validators=[RegexValidator(
             regex=r'^#([A-Fa-f0-9]{6})$',
             message='Введите цвет в формате HEX, например #49B64E.'
-        )]
+        )],
+        unique=False
     )
     slug = models.SlugField(
         max_length=TAG_SLUG_MAX_LENGTH,
@@ -89,6 +91,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         upload_to='recipes/images/',
+        blank=True, null=True,
         verbose_name='Изображение рецепта',
         help_text='Загрузите изображение блюда.'
     )

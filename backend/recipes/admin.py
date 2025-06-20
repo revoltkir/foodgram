@@ -1,16 +1,29 @@
 from django.contrib import admin
 from .models import Tag, Ingredient, Recipe, RecipeIngredient
+from django.utils.html import format_html
 
 admin.site.empty_value_display = '-пусто-'
 
 
 @admin.register(Tag)
 class TagAdmin(admin.ModelAdmin):
-    """Админка для модели Tag (тег)."""
-    list_display = ('id', 'name', 'color', 'slug')
+    """
+    Админка для модели Tag (тег).
+    Отображает имя, цвет (цветной квадратик) и slug, позволяет искать
+    и редактировать теги.
+    """
+    list_display = ('id', 'name', 'color_display', 'slug')
     search_fields = ('name', 'slug', 'color')
     prepopulated_fields = {"slug": ("name",)}
     fields = ('name', 'color', 'slug')
+
+    @admin.display(description='Цвет')
+    def color_display(self, obj):
+        return format_html(
+            '<div style="display:inline-block; width:20px; height:20px; '
+            'background:{}; border:1px solid #000; margin-right:5px; vertical-align:middle"></div>{}',
+            obj.color, obj.color
+        )
 
 
 @admin.register(Ingredient)
@@ -23,8 +36,7 @@ class IngredientAdmin(admin.ModelAdmin):
 
 class RecipeIngredientInline(admin.TabularInline):
     """
-    Вспомогательный inline для отображения ингредиентов
-    в рецепте в админке.
+    Вспомогательный inline для отображения ингредиентов в рецепте в админке.
     """
     model = RecipeIngredient
     extra = 1
@@ -32,18 +44,29 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    """Админка для модели Recipe (рецепт). """
-    list_display = ('id', 'name', 'author', 'favorites_count')
+    """Админка для модели Recipe (рецепт)."""
+    list_display = ('id', 'name', 'author', 'favorites_count', 'image_display')
     search_fields = ('name', 'author__username', 'author__email')
     list_filter = ('tags',)
     inlines = [RecipeIngredientInline]
-    readonly_fields = ('favorites_count',)
+    readonly_fields = ('image_display', 'favorites_count')
 
+    fields = (
+        'name', 'author', 'image', 'image_display', 'text',
+        'cooking_time', 'favorites_count', 'tags'
+    )
+
+    @admin.display(description='Фото')
+    def image_display(self, obj):
+        """Показывает превью изображения рецепта в админке."""
+        if obj.image and hasattr(obj.image, 'url'):
+            return format_html("<img src='{}' width='100' />", obj.image.url)
+        return 'нет фото'
+
+    @admin.display(description='В избранном')
     def favorites_count(self, obj):
         """Возвращает количество добавлений рецепта в избранное."""
         return obj.favorited_by.count()
-
-    favorites_count.short_description = 'В избранном'
 
 
 @admin.register(RecipeIngredient)
