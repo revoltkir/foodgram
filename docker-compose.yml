@@ -1,0 +1,35 @@
+version: '3.3'
+
+volumes:
+  backend_static:
+  media:
+
+services:
+  backend:
+    build: ./backend/
+    env_file: .env
+    volumes:
+      - backend_static:/app/collect_static/
+      - media:/app/media/
+
+
+  frontend:
+    container_name: foodgram-front
+    env_file: .env
+    build: ./frontend/
+    volumes:
+      - ./frontend/:/app/result_build/
+
+  gateway:
+    build: ./nginx/
+    env_file: .env
+    ports:
+      - "80:80"
+    volumes:
+      - backend_static:/staticfiles/static/
+      - media:/media/
+      - ./frontend/build:/usr/share/nginx/html/
+      - ./docs:/usr/share/nginx/html/api/docs/
+    depends_on:
+      - backend
+      - frontend
