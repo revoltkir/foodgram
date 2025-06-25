@@ -231,3 +231,36 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.recipe} в корзине у {self.user}'
+
+
+class Follow(models.Model):
+    """Модель подписок пользователя на авторов."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='following',
+        verbose_name='Подписчик'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='followers',
+        verbose_name='Автор'
+    )
+
+    class Meta:
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_follow'
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='no_self_follow'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.author}'
