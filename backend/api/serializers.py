@@ -48,3 +48,20 @@ class RecipeSerializer(serializers.ModelSerializer):
             'id', 'tags', 'author', 'ingredients',
             'name', 'image', 'text', 'cooking_time'
         )
+
+
+class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для передачи ингредиента в рецепте при создании."""
+
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField()
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'amount')
+
+    def validate_amount(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                'Количество должно быть больше 0.')
+        return value
