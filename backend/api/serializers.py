@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from recipes.models import Tag, Ingredient, RecipeIngredient, Recipe
+from recipes.models import (Tag, Ingredient, RecipeIngredient,
+                            Recipe, Favorite, ShoppingCart)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -19,30 +20,31 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    """Сериализатор для промежуточной модели RecipeIngredient."""
+    """Для отображения ингредиентов в рецепте."""
+
+    id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit')
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'ingredient', 'name', 'measurement_unit', 'amount')
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeReadSerializer(serializers.ModelSerializer):
-    """Сериализатор для чтения рецепта."""
-    author = serializers.StringRelatedField(read_only=True)
+class RecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Recipe (только чтение)."""
+
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
-        source='recipe_ingredients',
-        many=True,
-        read_only=True
+        source='recipeingredient_set', many=True, read_only=True
     )
-    image = serializers.ImageField(read_only=True)
+    author = serializers.StringRelatedField(read_only=True)
+    image = serializers.ImageField()
 
     class Meta:
         model = Recipe
         fields = (
-            'id', 'name', 'author', 'ingredients', 'tags',
-            'image', 'text', 'cooking_time'
+            'id', 'tags', 'author', 'ingredients',
+            'name', 'image', 'text', 'cooking_time'
         )
