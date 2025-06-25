@@ -121,7 +121,8 @@ class Recipe(models.Model):
             COOKING_TIME_MIN,
             f'Время не может быть меньше {COOKING_TIME_MIN} мин.')
         ],
-        verbose_name='Время приготовления (в минутах)'
+        verbose_name='Время приготовления (в минутах)',
+        help_text='Укажите время приготовления в минутах'
     )
     pub_date = models.DateTimeField(
         auto_now_add=True,
