@@ -56,7 +56,6 @@ class Ingredient(models.Model):
     """Модель ингредиента для рецептов."""
     name = models.CharField(
         max_length=INGREDIENT_NAME_MAX_LENGTH,
-        unique=True,
         verbose_name='Название ингредиента',
         help_text='Введите название ингредиента.'
     )
@@ -114,7 +113,7 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
-        verbose_name='Теги',
+        verbose_name='Теги рецепта',
         help_text='Выберите теги для рецепта.'
     )
     cooking_time = models.PositiveSmallIntegerField(
@@ -231,36 +230,3 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.recipe} в корзине у {self.user}'
-
-
-class Follow(models.Model):
-    """Модель подписок пользователя на авторов."""
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='following',
-        verbose_name='Подписчик'
-    )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='followers',
-        verbose_name='Автор'
-    )
-
-    class Meta:
-        verbose_name = 'Подписка'
-        verbose_name_plural = 'Подписки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'author'],
-                name='unique_follow'
-            ),
-            models.CheckConstraint(
-                check=~models.Q(user=models.F('author')),
-                name='no_self_follow'
-            )
-        ]
-
-    def __str__(self):
-        return f'{self.user} подписан на {self.author}'

@@ -48,7 +48,7 @@ class RecipeAdmin(admin.ModelAdmin):
     """Админка для модели Recipe (рецепт)."""
     list_display = ('id', 'name', 'author', 'favorites_count', 'image_display')
     search_fields = ('name', 'author__username', 'author__email')
-    list_filter = ('tags',)
+    list_filter = ('tags', 'author', 'pub_date')
     inlines = [RecipeIngredientInline]
     readonly_fields = ('image_display', 'favorites_count')
 
@@ -77,6 +77,7 @@ class RecipeIngredientAdmin(admin.ModelAdmin):
     """
     list_display = ('id', 'recipe', 'ingredient', 'amount')
     search_fields = ('recipe__name', 'ingredient__name')
+    list_filter = ('ingredient',)
 
 
 @admin.register(Favorite)
@@ -86,6 +87,7 @@ class FavoriteAdmin(admin.ModelAdmin):
     """
     list_display = ('id', 'user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
 
 
 @admin.register(ShoppingCart)
@@ -95,3 +97,4 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     """
     list_display = ('id', 'user', 'recipe')
     search_fields = ('user__username', 'recipe__name')
+    list_filter = ('user',)
