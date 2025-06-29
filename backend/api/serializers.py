@@ -37,7 +37,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(
-        source='recipeingredient_set', many=True, read_only=True
+        source='recipe_ingredients', many=True, read_only=True
     )
     author = serializers.SlugRelatedField(
         read_only=True,
