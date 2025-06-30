@@ -43,12 +43,37 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
         slug_field='username')
     image = serializers.ImageField()
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'tags', 'author', 'ingredients',
-            'name', 'image', 'text', 'cooking_time'
+            'name', 'image', 'text', 'cooking_time',
+            'is_favorited', 'is_in_shopping_cart',
+        )
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        user = request.user
+        return (
+                user.is_authenticated
+                and Favorite.objects.filter(
+            recipe=obj,
+            user=user
+        ).exists()
+        )
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        user = request.user
+        return (
+                user.is_authenticated
+                and ShoppingCart.objects.filter(
+            recipe=obj,
+            user=user
+        ).exists()
         )
 
 
