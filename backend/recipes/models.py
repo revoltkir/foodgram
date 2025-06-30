@@ -1,6 +1,7 @@
 from django.db import models
-from django.core.validators import RegexValidator, MinValueValidator
-from django.contrib.auth import get_user_model
+from django.core.validators import RegexValidator, MinValueValidator, \
+    MaxValueValidator
+
 
 from .constants import (
     TAG_NAME_MAX_LENGTH, TAG_COLOR_MAX_LENGTH, TAG_SLUG_MAX_LENGTH,
@@ -30,6 +31,7 @@ class Tag(models.Model):
             regex=r'^#([A-Fa-f0-9]{6})$',
             message='Введите цвет в формате HEX, например #49B64E.'
         )],
+        default='#49B64E',
         unique=False
     )
     slug = models.SlugField(
@@ -153,9 +155,15 @@ class RecipeIngredient(models.Model):
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(
-            INGREDIENT_AMOUNT_MIN,
-            f'Минимальное количество — {INGREDIENT_AMOUNT_MIN}.')
+        validators=[
+            MinValueValidator(
+                INGREDIENT_AMOUNT_MIN,
+                f'Минимальное количество — {INGREDIENT_AMOUNT_MIN}.'
+            ),
+            MaxValueValidator(
+                INGREDIENT_AMOUNT_MAX,
+                f'Максимальное количество — {INGREDIENT_AMOUNT_MAX}.'
+            )
         ],
         verbose_name='Количество',
         help_text='Укажите количество ингредиента.'
