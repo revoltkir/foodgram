@@ -1,7 +1,9 @@
-import transaction
+from django.db import transaction
 from rest_framework import serializers
 from recipes.models import (Tag, Ingredient, RecipeIngredient,
                             Recipe, Favorite, ShoppingCart)
+
+from drf_extra_fields.fields import Base64ImageField
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -101,6 +103,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all()
     )
     ingredients = RecipeIngredientCreateSerializer(many=True)
+    image = Base64ImageField()
 
     class Meta:
         model = Recipe
@@ -108,6 +111,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'id',
             'ingredients',
             'tags',
+            'image',
             'name',
             'text',
             'cooking_time'
@@ -186,6 +190,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         """Представление готового рецепта как в read-сериализаторе."""
         context = {'request': self.context.get('request')}
         return RecipeSerializer(instance, context=context).data
+
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     class Meta:
