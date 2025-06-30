@@ -49,6 +49,8 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'foodgram_backend.urls'
 
+AUTH_USER_MODEL = 'users.FoodgramUser'
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

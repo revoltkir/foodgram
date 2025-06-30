@@ -9,7 +9,7 @@ from .constants import (
     INGREDIENT_AMOUNT_MIN, INGREDIENT_AMOUNT_MAX
 )
 
-User = get_user_model()
+from users.models import FoodgramUser
 
 
 class Tag(models.Model):
@@ -83,7 +83,7 @@ class Ingredient(models.Model):
 class Recipe(models.Model):
     """Модель рецепта, публикуемого пользователями."""
     author = models.ForeignKey(
-        User,
+        FoodgramUser,
         on_delete=models.CASCADE,
         related_name='recipes',
         verbose_name='Автор рецепта'
@@ -178,7 +178,7 @@ class RecipeIngredient(models.Model):
 class Favorite(models.Model):
     """Модель избранных рецептов пользователей."""
     user = models.ForeignKey(
-        User,
+        FoodgramUser,
         on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Пользователь'
@@ -206,7 +206,7 @@ class Favorite(models.Model):
 class ShoppingCart(models.Model):
     """Модель рецептов в корзине покупок пользователя."""
     user = models.ForeignKey(
-        User,
+        FoodgramUser,
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
     )
