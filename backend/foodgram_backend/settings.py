@@ -144,3 +144,12 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ),
 }
+
+DJOSER = {
+    "SERIALIZERS": {
+        "user_create": "api.serializers.UserRegistrationSerializer",
+        "user": "api.serializers.UserSerializer",
+        "current_user": "api.serializers.UserSerializer",
+    },
+    "HIDE_USERS": False,
+}
