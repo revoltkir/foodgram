@@ -1,26 +1,39 @@
-from collections import defaultdict
-
-from rest_framework import viewsets, permissions
+from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
 from recipes.models import Recipe, Ingredient, Favorite, ShoppingCart, \
-    RecipeIngredient
-from .filters import RecipeFilter
+    RecipeIngredient, Tag
+from .filters import RecipeFilter, IngredientSearchFilter
 from .pagination import LimitPageNumberPagination
-from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly
+from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly, ReadOnly
 from .serializers import RecipeSerializer, IngredientSerializer, \
-    RecipeCreateSerializer, FavoriteSerializer, ShoppingCartSerializer, \
-    RecipeShortSerializer
-from django.http import HttpResponse
+    RecipeCreateSerializer, RecipeShortSerializer, TagSerializer
+
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import status
-from django.db.models import Sum, F
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import filters, status
+
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
 from api.utils.shopping_cart import download_shopping_cart_response
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class TagViewSet(ReadOnlyModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAdminUser | ReadOnly]
+    pagination_class = None
+
+
+class IngredientViewSet(ReadOnlyModelViewSet):
+    queryset = Ingredient.objects.all()
+    serializer_class = IngredientSerializer
+    permission_classes = [IsAdminUser | ReadOnly]
+    filter_backends = (DjangoFilterBackend, filters.SearchFilter)
+    filterset_class = IngredientSearchFilter
+    pagination_class = None
+
+
+class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.select_related('author').prefetch_related(
         'tags',
         'recipe_ingredients__ingredient',
@@ -109,9 +122,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
         return response
 
+    @action(detail=False, methods=['get'], url_path='shopping_cart',
+            permission_classes=[IsAuthenticated])
+    def get_shopping_cart(self, request):
+        user = request.user
+        recipes = Recipe.objects.filter(shoppingcart__user=user)
+        serializer = RecipeShortSerializer(recipes, many=True,
+                                           context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
-    serializer_class = IngredientSerializer
-    permission_classes = (AllowAny,)
-    filterset_fields = ('name',)
+
