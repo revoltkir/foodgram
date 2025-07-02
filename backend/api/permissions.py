@@ -17,3 +17,9 @@ class IsSuperuserOrAdminOrAuthorOrReadOnly(permissions.BasePermission):
                 or request.user.is_staff
                 or obj.author == request.user
         )
+
+
+class ReadOnly(permissions.BasePermission):
+    """Разрешение только на чтение"""
+    def has_permission(self, request, view):
+        return request.method in permissions.SAFE_METHODS
