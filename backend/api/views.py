@@ -1,13 +1,16 @@
 from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import Recipe, Ingredient, Favorite, ShoppingCart, \
-    RecipeIngredient, Tag
+from recipes.models import Recipe, Ingredient, Favorite, ShoppingCart, Tag
+from users.models import FoodgramUser, Subscription
 from .filters import RecipeFilter, IngredientSearchFilter
 from .pagination import LimitPageNumberPagination
 from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly, ReadOnly
 from .serializers import RecipeSerializer, IngredientSerializer, \
-    RecipeCreateSerializer, RecipeShortSerializer, TagSerializer
+    RecipeCreateSerializer, RecipeShortSerializer, TagSerializer, \
+    UserSubscriptionSerializer, SubscriptionSerializer, \
+    UserRegistrationSerializer, UserSerializer, SetPasswordSerializer
 
+from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import filters, status
@@ -132,3 +135,78 @@ class RecipeViewSet(ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class CustomUserViewSet(UserViewSet):
+    """
+    Кастомный вьюсет на базе Djoser для работы с пользователями:
+    регистрация, профиль, подписки, смена пароля.
+    """
+    queryset = FoodgramUser.objects.all()
+    pagination_class = LimitPageNumberPagination
+    permission_classes = (AllowAny,)
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return UserRegistrationSerializer
+        if self.action == 'set_password':
+            return SetPasswordSerializer
+        return UserSerializer
+
+    def get_permissions(self):
+        if self.action in ('me', 'set_password', 'subscribe', 'subscriptions'):
+            self.permission_classes = [IsAuthenticated]
+        return super().get_permissions()
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def set_password(self, request):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        user.set_password(serializer.validated_data['new_password'])
+        user.save()
+
+        return Response({'message': 'Пароль успешно изменён.'}, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['post', 'delete'],
+        detail=True,
+        permission_classes=[IsAuthenticated]
+    )
+    def subscribe(self, request, pk=None):
+        author = get_object_or_404(FoodgramUser, pk=pk)
+        user = request.user
+
+        if user == author:
+            return Response({'error': 'Нельзя подписаться на самого себя.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == 'POST':
+            if Subscription.objects.filter(user=user, author=author).exists():
+                return Response({'error': 'Вы уже подписаны.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+
+            serializer = SubscriptionSerializer(
+                data={'user': user.pk, 'author': author.pk},
+                context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # DELETE
+        subscription = Subscription.objects.filter(user=user, author=author)
+        if subscription.exists():
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response({'error': 'Вы не подписаны на этого пользователя.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def subscriptions(self, request):
+        user = request.user
+        subscriptions = Subscription.objects.filter(user=user)
+        paginator = LimitPageNumberPagination()
+        result_page = paginator.paginate_queryset(subscriptions, request)
+        serializer = SubscriptionSerializer(result_page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
