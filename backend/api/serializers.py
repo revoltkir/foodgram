@@ -75,6 +75,18 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.id in self._subscribed_ids
 
 
+class SetPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True,
+                                         validators=[validate_password])
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Текущий пароль неверный.")
+        return value
+
+
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор подписок."""
     user = serializers.PrimaryKeyRelatedField(
