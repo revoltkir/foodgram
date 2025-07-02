@@ -29,7 +29,10 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FoodgramUser
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+        fields = (
+            'email', 'username', 'first_name',
+            'last_name', 'password', 'password2'
+        )
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -54,7 +57,8 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = FoodgramUser
         fields = (
-        'id', 'email', 'username', 'first_name', 'last_name', 'is_subscribed')
+            'id', 'email', 'username', 'first_name', 'last_name',
+            'is_subscribed')
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
@@ -73,8 +77,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SubscriptionSerializer(serializers.ModelSerializer):
     """Сериализатор подписок."""
-    user = serializers.PrimaryKeyRelatedField(read_only=True,
-                                              default=serializers.CurrentUserDefault())
+    user = serializers.PrimaryKeyRelatedField(
+        read_only=True,
+        default=serializers.CurrentUserDefault()
+    )
     author = serializers.PrimaryKeyRelatedField(
         queryset=FoodgramUser.objects.all())
 
