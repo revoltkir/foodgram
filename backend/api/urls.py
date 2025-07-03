@@ -12,9 +12,14 @@ router.register('users', CustomUserViewSet, basename='users')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include('djoser.urls')),
+    path('auth/', include('djoser.urls.authtoken')),
 ]
 
 if settings.DEBUG:
     import debug_toolbar
 
-    urlpatterns += [path('__debug__/', include(debug_toolbar.urls))]
+    urlpatterns += [
+        path('auth/', include('rest_framework.urls')),
+        path('__debug__/', include('debug_toolbar.urls')),
+    ]

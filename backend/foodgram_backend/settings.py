@@ -150,6 +150,7 @@ DJOSER = {
         "user_create": "api.serializers.UserRegistrationSerializer",
         "user": "api.serializers.UserSerializer",
         "current_user": "api.serializers.UserSerializer",
+        'set_password': 'api.serializers.SetPasswordSerializer',
     },
     "HIDE_USERS": False,
 }
