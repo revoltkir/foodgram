@@ -2,8 +2,9 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.db import transaction
-
+from django.core.validators import RegexValidator
 from api.fields import SmartImageField
+from recipes.constants import NAME_MAX_LENGTH
 
 from recipes.models import (
     Tag, Ingredient, RecipeIngredient,
@@ -12,37 +13,44 @@ from recipes.models import (
 from users.models import FoodgramUser, Subscription
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    """Сериализатор регистрации пользователя с валидацией пароля."""
+class CreateUserSerializer(serializers.ModelSerializer):
+    """Регистрация пользователя с валидацией пароля"""
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=FoodgramUser.objects.all())]
     )
     username = serializers.CharField(
         required=True,
-        validators=[UniqueValidator(queryset=FoodgramUser.objects.all())]
+        max_length=NAME_MAX_LENGTH,
+        validators=[
+            UniqueValidator(queryset=FoodgramUser.objects.all()),
+            RegexValidator(
+                regex=r'^[\w.@+-]+$',
+                message='Username содержит недопустимые символы.'
+            )
+        ]
     )
-    password = serializers.CharField(write_only=True, required=True,
-                                     validators=[validate_password])
-    password2 = serializers.CharField(write_only=True,
-                                      label='Подтверждение пароля')
+    first_name = serializers.CharField(required=True,
+                                       max_length=NAME_MAX_LENGTH)
+    last_name = serializers.CharField(required=True,
+                                      max_length=NAME_MAX_LENGTH)
+    password = serializers.CharField(
+        write_only=True,
+        validators=[validate_password]
+    )
 
     class Meta:
         model = FoodgramUser
         fields = (
-            'email', 'username', 'first_name',
-            'last_name', 'password', 'password2'
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'password'
         )
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError(
-                {"password": "Пароли не совпадают."}
-            )
-        return attrs
-
     def create(self, validated_data):
-        validated_data.pop('password2')
         password = validated_data.pop('password')
         user = FoodgramUser(**validated_data)
         user.set_password(password)
@@ -50,14 +58,14 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserInfoSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя с флагом подписки."""
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = FoodgramUser
         fields = (
-            'id', 'email', 'username', 'first_name', 'last_name',
+            'email', 'id', 'username', 'first_name', 'last_name',
             'is_subscribed')
 
     def get_is_subscribed(self, obj):
@@ -121,13 +129,13 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         return subscription
 
 
-class UserSubscriptionSerializer(UserSerializer):
+class UserSubscriptionSerializer(UserInfoSerializer):
     """Расширенный сериализатор пользователя с рецептами и количеством."""
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
-    class Meta(UserSerializer.Meta):
-        fields = UserSerializer.Meta.fields + (
+    class Meta(UserInfoSerializer.Meta):
+        fields = UserInfoSerializer.Meta.fields + (
             'recipes',
             'recipes_count',
         )
@@ -175,7 +183,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(source='recipe_ingredients',
                                              many=True, read_only=True)
-    author = UserSerializer(read_only=True)
+    author = UserInfoSerializer(read_only=True)
     image = SmartImageField(required=False)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()

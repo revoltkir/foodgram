@@ -1,4 +1,5 @@
 from rest_framework import permissions
+from rest_framework.exceptions import MethodNotAllowed
 
 
 class IsSuperuserOrAdminOrAuthorOrReadOnly(permissions.BasePermission):
@@ -20,6 +21,9 @@ class IsSuperuserOrAdminOrAuthorOrReadOnly(permissions.BasePermission):
 
 
 class ReadOnly(permissions.BasePermission):
-    """Разрешение только на чтение"""
+    """Разрешает только SAFE_METHODS, иначе 405 Method Not Allowed."""
     def has_permission(self, request, view):
-        return request.method in permissions.SAFE_METHODS
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        # вместо False — бросаем MethodNotAllowed, DRF отдаст 405
+        raise MethodNotAllowed(request.method)

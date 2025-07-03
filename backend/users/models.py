@@ -26,7 +26,8 @@ class FoodgramUser(AbstractUser):
         )
     )
 
-    REQUIRED_FIELDS = ['email', 'first_name']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
     class Meta:
         verbose_name = 'Пользователь'

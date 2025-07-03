@@ -8,7 +8,7 @@ from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly, ReadOnly
 from .serializers import RecipeSerializer, IngredientSerializer, \
     RecipeCreateSerializer, RecipeShortSerializer, TagSerializer, \
     UserSubscriptionSerializer, SubscriptionSerializer, \
-    UserRegistrationSerializer, UserSerializer, SetPasswordSerializer
+    CreateUserSerializer, UserInfoSerializer, SetPasswordSerializer
 
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
@@ -27,7 +27,7 @@ class TagViewSet(ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class IngredientViewSet(ReadOnlyModelViewSet):
+class IngredientViewSet(ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [IsAdminUser | ReadOnly]
@@ -146,10 +146,10 @@ class CustomUserViewSet(UserViewSet):
 
     def get_serializer_class(self):
         if self.action == 'create':
-            return UserRegistrationSerializer
+            return CreateUserSerializer
         if self.action == 'set_password':
             return SetPasswordSerializer
-        return UserSerializer
+        return UserInfoSerializer
 
     def get_permissions(self):
         if self.action in ('me', 'set_password', 'subscribe', 'subscriptions'):
@@ -165,7 +165,7 @@ class CustomUserViewSet(UserViewSet):
         user.set_password(serializer.validated_data['new_password'])
         user.save()
 
-        return Response({'message': 'Пароль успешно изменён.'}, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
         methods=['post', 'delete'],
