@@ -61,7 +61,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
 class UserInfoSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя с флагом подписки."""
     is_subscribed = serializers.SerializerMethodField()
-    avatar = serializers.ImageField(read_only=True)
+    avatar = SmartImageField(read_only=True, required=False, allow_null=True)
 
     class Meta:
         model = FoodgramUser
@@ -69,19 +69,32 @@ class UserInfoSerializer(serializers.ModelSerializer):
             'email', 'id', 'username', 'first_name', 'last_name',
             'avatar', 'is_subscribed')
 
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if not instance.avatar:
+            rep['avatar'] = None
+        return rep
+
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         user = getattr(request, 'user', None)
         if not user or user.is_anonymous:
             return False
 
-        # Кешируем author_id, на которых подписан текущий пользователь
         if not hasattr(self, '_subscribed_ids'):
             self._subscribed_ids = set(
                 Subscription.objects.filter(user=user).values_list('author_id',
                                                                    flat=True)
             )
         return obj.id in self._subscribed_ids
+
+
+class SetUserAvatarSerializer(serializers.ModelSerializer):
+    avatar = SmartImageField()
+
+    class Meta:
+        model = FoodgramUser
+        fields = ('avatar',)
 
 
 class SetPasswordSerializer(serializers.Serializer):

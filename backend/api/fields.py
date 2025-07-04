@@ -1,12 +1,21 @@
-from rest_framework.fields import ImageField
-from drf_extra_fields.fields import Base64ImageField
-from django.core.files.uploadedfile import InMemoryUploadedFile
+import base64
+from django.core.files.base import ContentFile
+from rest_framework import serializers
 
 
-class SmartImageField(Base64ImageField):
+class SmartImageField(serializers.ImageField):
+    """Обрабатывает как файл, так и base64-изображения."""
+
     def to_internal_value(self, data):
-        # Если это обычный файл — обрабатываем как ImageField
-        if isinstance(data, InMemoryUploadedFile):
-            return ImageField().to_internal_value(data)
-        # Если это base64 — обрабатываем как Base64
+        if isinstance(data, str) and data.startswith('data:'):
+            try:
+                # Разбираем строку base64
+                format, imgstr = data.split(';base64,')
+                ext = format.split('/')[-1]
+                decoded_file = base64.b64decode(imgstr)
+                file_name = f'temp_avatar.{ext}'
+                data = ContentFile(decoded_file, name=file_name)
+            except Exception:
+                raise serializers.ValidationError('Ошибка при декодировании изображения в base64.')
+
         return super().to_internal_value(data)

@@ -8,7 +8,8 @@ from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly, ReadOnly
 from .serializers import RecipeSerializer, IngredientSerializer, \
     RecipeCreateSerializer, RecipeShortSerializer, TagSerializer, \
     UserSubscriptionSerializer, SubscriptionSerializer, \
-    CreateUserSerializer, UserInfoSerializer, SetPasswordSerializer
+    CreateUserSerializer, UserInfoSerializer, SetPasswordSerializer, \
+    SetUserAvatarSerializer
 
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
@@ -26,6 +27,7 @@ class TagViewSet(ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [IsAdminUser | ReadOnly]
     pagination_class = None
+    lookup_field = 'slug'
 
 
 class IngredientViewSet(ModelViewSet):
@@ -199,19 +201,28 @@ class CustomUserViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=False, methods=['post', 'put', 'patch'], url_path='me/avatar')
+    @action(detail=False, methods=['post', 'put', 'patch'],
+            url_path='me/avatar')
     def set_avatar(self, request):
-        avatar_file = request.data.get('avatar')
-        if not avatar_file:
+        if 'avatar' not in request.data or not request.data['avatar']:
             return Response({'avatar': 'Необходимо передать файл.'},
                             status=status.HTTP_400_BAD_REQUEST)
-        request.user.avatar = avatar_file
-        request.user.save()
-        serializer = UserInfoSerializer(request.user,
-                                        context={'request': request})
-        return Response(serializer.data)
 
+        serializer = SetUserAvatarSerializer(
+            instance=request.user,
+            data=request.data,
+            context={'request': request},
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data)
     @set_avatar.mapping.delete
     def delete_avatar(self, request):
-        request.user.avatar.delete(save=True)
+        user = request.user
+        if user.avatar:
+            user.avatar.delete(save=False)
+        user.avatar = None
+        user.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
