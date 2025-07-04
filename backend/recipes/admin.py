@@ -22,7 +22,8 @@ class TagAdmin(admin.ModelAdmin):
     def color_display(self, obj):
         return format_html(
             '<div style="display:inline-block; width:20px; height:20px; '
-            'background:{}; border:1px solid #000; margin-right:5px; vertical-align:middle"></div>{}',
+            'background:{}; border:1px solid #000;'
+            ' margin-right:5px; vertical-align:middle"></div>{}',
             obj.color, obj.color
         )
 
