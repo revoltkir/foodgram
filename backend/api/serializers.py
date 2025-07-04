@@ -61,12 +61,13 @@ class CreateUserSerializer(serializers.ModelSerializer):
 class UserInfoSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя с флагом подписки."""
     is_subscribed = serializers.SerializerMethodField()
+    avatar = serializers.ImageField(read_only=True)
 
     class Meta:
         model = FoodgramUser
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'is_subscribed')
+            'avatar', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
