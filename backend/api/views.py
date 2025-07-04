@@ -199,7 +199,7 @@ class CustomUserViewSet(UserViewSet):
         )
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=False, methods=['post'], url_path='me/avatar')
+    @action(detail=False, methods=['post', 'put', 'patch'], url_path='me/avatar')
     def set_avatar(self, request):
         avatar_file = request.data.get('avatar')
         if not avatar_file:
