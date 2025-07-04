@@ -18,6 +18,7 @@ from rest_framework import filters, status
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from django.shortcuts import get_object_or_404
 from api.utils.shopping_cart import download_shopping_cart_response
+from .utils.permissions_map import user_permissions, recipe_permissions
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -49,22 +50,26 @@ class RecipeViewSet(ModelViewSet):
     ordering_fields = ('pub_date',)
     ordering = ('pub_date',)
 
-    def get_serializer_class(self):
-        if self.action in ('create', 'partial_update', 'update'):
-            return RecipeCreateSerializer
-        if self.action in ('favorite', 'shopping_cart'):
-            return RecipeShortSerializer
-        return RecipeSerializer
+    permission_classes = [AllowAny]
+    permission_classes_by_action = recipe_permissions
 
     def get_permissions(self):
-        if self.action == 'create':
-            return [IsAuthenticated()]
-        if self.action in ('update', 'partial_update', 'destroy',
-                           'download_shopping_cart'):
-            return [IsSuperuserOrAdminOrAuthorOrReadOnly()]
-        if self.action in ('favorite', 'shopping_cart'):
-            return [IsAuthenticated()]
-        return [AllowAny()]
+        perms = self.permission_classes_by_action.get(
+            self.action, self.permission_classes
+        )
+        return [perm() for perm in perms]
+
+    def get_serializer_class(self):
+        if self.action in (
+                'create', 'update', 'partial_update'
+        ):
+            return RecipeCreateSerializer
+        if self.action in (
+                'favorite', 'shopping_cart', 'delete_favorite',
+                'delete_shopping_cart', 'get_shopping_cart'
+        ):
+            return RecipeShortSerializer
+        return RecipeSerializer
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -72,28 +77,19 @@ class RecipeViewSet(ModelViewSet):
     def add_item(self, model, serializer_class, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         user = request.user
-
         if model.objects.filter(user=user, recipe=recipe).exists():
-            return Response(
-                {'message': 'Рецепт уже добавлен'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({'message': 'Рецепт уже добавлен'},
+                            status=status.HTTP_400_BAD_REQUEST)
         model.objects.create(user=user, recipe=recipe)
         serializer = serializer_class(recipe, context={'request': request})
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def remove_item(self, model, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        user = request.user
-
-        item = model.objects.filter(user=user, recipe=recipe)
+        item = model.objects.filter(user=request.user, recipe=recipe)
         if not item.exists():
-            return Response(
-                {'message': 'Рецепт не найден в списке.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+            return Response({'message': 'Рецепт не найден в списке.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -118,15 +114,13 @@ class RecipeViewSet(ModelViewSet):
         if not request.user.is_authenticated:
             return Response({'detail': 'Требуется авторизация.'},
                             status=status.HTTP_401_UNAUTHORIZED)
-
         response = download_shopping_cart_response(request.user)
         if not response:
             return Response({'detail': 'Корзина пуста.'},
                             status=status.HTTP_400_BAD_REQUEST)
-        return response
+        return response  # <- response уже сам корректный
 
-    @action(detail=False, methods=['get'], url_path='shopping_cart',
-            permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'], url_path='shopping_cart')
     def get_shopping_cart(self, request):
         user = request.user
         recipes = Recipe.objects.filter(shoppingcart__user=user)
@@ -144,6 +138,14 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = LimitPageNumberPagination
     permission_classes = (AllowAny,)
 
+    permission_classes_by_action = user_permissions
+
+    def get_permissions(self):
+        perms = self.permission_classes_by_action.get(
+            self.action, self.permission_classes
+        )
+        return [perm() for perm in perms]
+
     def get_serializer_class(self):
         if self.action == 'create':
             return CreateUserSerializer
@@ -151,27 +153,18 @@ class CustomUserViewSet(UserViewSet):
             return SetPasswordSerializer
         return UserInfoSerializer
 
-    def get_permissions(self):
-        if self.action in ('me', 'set_password', 'subscribe', 'subscriptions'):
-            self.permission_classes = [IsAuthenticated]
-        return super().get_permissions()
-
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['post'])
     def set_password(self, request):
-        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer = self.get_serializer(data=request.data,
+                                         context={'request': request})
         serializer.is_valid(raise_exception=True)
 
-        user = request.user
-        user.set_password(serializer.validated_data['new_password'])
-        user.save()
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        methods=['post', 'delete'],
-        detail=True,
-        permission_classes=[IsAuthenticated]
-    )
+    @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, pk=None):
         author = get_object_or_404(FoodgramUser, pk=pk)
         user = request.user
@@ -194,19 +187,31 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         # DELETE
-        subscription = Subscription.objects.filter(user=user, author=author)
-        if subscription.exists():
-            subscription.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        Subscription.objects.filter(user=user, author=author).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-        return Response({'error': 'Вы не подписаны на этого пользователя.'},
-                        status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'])
     def subscriptions(self, request):
-        user = request.user
-        subscriptions = Subscription.objects.filter(user=user)
-        paginator = LimitPageNumberPagination()
-        result_page = paginator.paginate_queryset(subscriptions, request)
-        serializer = SubscriptionSerializer(result_page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
+        subscriptions = Subscription.objects.filter(user=request.user)
+        page = self.paginate_queryset(subscriptions)
+        serializer = SubscriptionSerializer(
+            page, many=True, context={'request': request}
+        )
+        return self.get_paginated_response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='me/avatar')
+    def set_avatar(self, request):
+        avatar_file = request.data.get('avatar')
+        if not avatar_file:
+            return Response({'avatar': 'Необходимо передать файл.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        request.user.avatar = avatar_file
+        request.user.save()
+        serializer = UserInfoSerializer(request.user,
+                                        context={'request': request})
+        return Response(serializer.data)
+
+    @set_avatar.mapping.delete
+    def delete_avatar(self, request):
+        request.user.avatar.delete(save=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)
