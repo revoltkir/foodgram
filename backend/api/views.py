@@ -27,7 +27,6 @@ class TagViewSet(ReadOnlyModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [IsAdminUser | ReadOnly]
     pagination_class = None
-    lookup_field = 'slug'
 
 
 class IngredientViewSet(ModelViewSet):
@@ -218,6 +217,7 @@ class CustomUserViewSet(UserViewSet):
         serializer.save()
 
         return Response(serializer.data)
+
     @set_avatar.mapping.delete
     def delete_avatar(self, request):
         user = request.user
