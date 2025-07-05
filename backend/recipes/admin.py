@@ -10,22 +10,12 @@ admin.site.empty_value_display = '-пусто-'
 class TagAdmin(admin.ModelAdmin):
     """
     Админка для модели Tag (тег).
-    Отображает имя, цвет (цветной квадратик) и slug, позволяет искать
-    и редактировать теги.
+    Отображает имя и slug, позволяет искать и редактировать теги.
     """
-    list_display = ('id', 'name', 'color_display', 'slug')
-    search_fields = ('name', 'slug', 'color')
+    list_display = ('id', 'name', 'slug')
+    search_fields = ('name', 'slug')
     prepopulated_fields = {"slug": ("name",)}
-    fields = ('name', 'color', 'slug')
-
-    @admin.display(description='Цвет')
-    def color_display(self, obj):
-        return format_html(
-            '<div style="display:inline-block; width:20px; height:20px; '
-            'background:{}; border:1px solid #000;'
-            ' margin-right:5px; vertical-align:middle"></div>{}',
-            obj.color, obj.color
-        )
+    fields = ('name', 'slug')
 
 
 @admin.register(Ingredient)
