@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator, MinValueValidator, \
 
 
 from .constants import (
-    TAG_NAME_MAX_LENGTH, TAG_COLOR_MAX_LENGTH, TAG_SLUG_MAX_LENGTH,
+    TAG_NAME_MAX_LENGTH, TAG_SLUG_MAX_LENGTH,
     INGREDIENT_NAME_MAX_LENGTH, MEASUREMENT_UNIT_MAX_LENGTH,
     RECIPE_NAME_MAX_LENGTH, COOKING_TIME_MIN, COOKING_TIME_MAX,
     INGREDIENT_AMOUNT_MIN, INGREDIENT_AMOUNT_MAX
@@ -21,19 +21,7 @@ class Tag(models.Model):
         verbose_name='Название тега',
         help_text='Введите уникальное название тега.'
     )
-    color = models.CharField(
-        max_length=TAG_COLOR_MAX_LENGTH,
-        blank=True,
-        null=True,
-        verbose_name='Цвет (HEX)',
-        help_text='HEX-код цвета, например #49B64E',
-        validators=[RegexValidator(
-            regex=r'^#([A-Fa-f0-9]{6})$',
-            message='Введите цвет в формате HEX, например #49B64E.'
-        )],
-        default='#49B64E',
-        unique=False
-    )
+
     slug = models.SlugField(
         max_length=TAG_SLUG_MAX_LENGTH,
         unique=True,
