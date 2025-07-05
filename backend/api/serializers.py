@@ -67,7 +67,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
         model = FoodgramUser
         fields = (
             'email', 'id', 'username', 'first_name', 'last_name',
-            'avatar', 'is_subscribed')
+            'is_subscribed', 'avatar')
 
     def to_representation(self, instance):
         rep = super().to_representation(instance)
@@ -173,7 +173,7 @@ class UserSubscriptionSerializer(UserInfoSerializer):
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
-        fields = ('id', 'name', 'color', 'slug')
+        fields = ('id', 'name', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -289,12 +289,14 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Укажите ингредиенты.')
         if cooking_time < 1:
             raise serializers.ValidationError(
-                'Время приготовления должно быть не менее 1 минуты.')
+                'Время приготовления должно быть не менее 1 минуты.'
+            )
 
-        ids = [item['id'].id for item in ingredients]
-        if len(ids) != len(set(ids)):
+        ingredient_ids = [item['id'].id for item in ingredients]
+        if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
-                'Ингредиенты не должны повторяться.')
+                'Ингредиенты не должны повторяться.'
+            )
 
         return data
 
@@ -303,10 +305,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         objs = [
             RecipeIngredient(
                 recipe=recipe,
-                ingredient_id=ingredient['id'],
-                amount=ingredient['amount']
+                ingredient_id=ingredient_data['id'].id,  # 🔥 исправлено здесь
+                amount=ingredient_data['amount']
             )
-            for ingredient in ingredients
+            for ingredient_data in ingredients
         ]
         RecipeIngredient.objects.bulk_create(objs)
 
@@ -314,9 +316,11 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
+
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags)
         self.create_ingredients(recipe, ingredients)
+
         return recipe
 
     @transaction.atomic
@@ -325,16 +329,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags')
 
         instance = super().update(instance, validated_data)
-
         instance.recipe_ingredients.all().delete()
         self.create_ingredients(instance, ingredients)
         instance.tags.set(tags)
+
         return instance
 
     def to_representation(self, instance):
         context = {'request': self.context.get('request')}
         return RecipeSerializer(instance, context=context).data
-
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     image = SmartImageField(required=False)
