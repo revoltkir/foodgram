@@ -9,7 +9,7 @@ from .serializers import RecipeSerializer, IngredientSerializer, \
     RecipeCreateSerializer, RecipeShortSerializer, TagSerializer, \
     UserSubscriptionSerializer, SubscriptionSerializer, \
     CreateUserSerializer, UserInfoSerializer, SetPasswordSerializer, \
-    SetUserAvatarSerializer
+    SetUserAvatarSerializer, RecipeLinkSerializer
 
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
@@ -128,6 +128,13 @@ class RecipeViewSet(ModelViewSet):
         serializer = RecipeShortSerializer(recipes, many=True,
                                            context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_short_link(self, request, pk=None):
+        recipe = self.get_object()
+        serializer = RecipeLinkSerializer(recipe, context={
+            'request': request})
+        return Response(serializer.data)
 
 
 class CustomUserViewSet(UserViewSet):

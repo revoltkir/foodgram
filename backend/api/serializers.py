@@ -366,6 +366,15 @@ class RecipeShortSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'image', 'cooking_time')
 
 
+class RecipeLinkSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        host = request.build_absolute_uri('/')[:-1].strip('/') if request else ''
+        return {
+            'short-link': f'{host}/s/{instance.id}'
+        }
+
+
 class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
