@@ -284,19 +284,37 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         cooking_time = data.get('cooking_time')
 
         if not tags:
-            raise serializers.ValidationError('Укажите хотя бы один тег.')
-        if not ingredients:
-            raise serializers.ValidationError('Укажите ингредиенты.')
-        if cooking_time < 1:
             raise serializers.ValidationError(
-                'Время приготовления должно быть не менее 1 минуты.'
+                {'tags': 'Укажите хотя бы один тег.'}
             )
+
+        if len(tags) != len(set(tags)):
+            raise serializers.ValidationError(
+                {'tags': 'Теги не должны повторяться.'}
+            )
+
+        if not ingredients:
+            raise serializers.ValidationError(
+                {'ingredients': 'Укажите ингредиенты.'})
 
         ingredient_ids = [item['id'].id for item in ingredients]
         if len(ingredient_ids) != len(set(ingredient_ids)):
             raise serializers.ValidationError(
-                'Ингредиенты не должны повторяться.'
+                {'ingredients': 'Ингредиенты не должны повторяться.'}
             )
+
+        if cooking_time < 1:
+            raise serializers.ValidationError(
+                {
+                    'cooking_time':
+                        'Время приготовления должно быть не менее 1 минуты.'
+                }
+            )
+
+        image = self.initial_data.get('image')
+        if not image:
+            raise serializers.ValidationError(
+                {'image': 'Изображение обязательно.'})
 
         return data
 
@@ -305,7 +323,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         objs = [
             RecipeIngredient(
                 recipe=recipe,
-                ingredient_id=ingredient_data['id'].id,  # 🔥 исправлено здесь
+                ingredient_id=ingredient_data['id'].id,
                 amount=ingredient_data['amount']
             )
             for ingredient_data in ingredients
@@ -338,6 +356,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         context = {'request': self.context.get('request')}
         return RecipeSerializer(instance, context=context).data
+
 
 class RecipeShortSerializer(serializers.ModelSerializer):
     image = SmartImageField(required=False)
