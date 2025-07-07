@@ -166,8 +166,8 @@ class CustomUserViewSet(UserViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'])
-    def subscribe(self, request, pk=None):
-        author = get_object_or_404(FoodgramUser, pk=pk)
+    def subscribe(self, request, id=None):
+        author = get_object_or_404(FoodgramUser, pk=id)
         user = request.user
 
         if user == author:
@@ -194,10 +194,10 @@ class CustomUserViewSet(UserViewSet):
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
         subscriptions = Subscription.objects.filter(user=request.user)
-        page = self.paginate_queryset(subscriptions)
-        serializer = SubscriptionSerializer(
-            page, many=True, context={'request': request}
-        )
+        authors = [sub.author for sub in subscriptions]
+        page = self.paginate_queryset(authors)
+        serializer = UserSubscriptionSerializer(page, many=True, context={
+            'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['post', 'put', 'patch'],

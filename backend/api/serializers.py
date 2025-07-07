@@ -144,7 +144,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
 
 class UserSubscriptionSerializer(UserInfoSerializer):
-    """Расширенный сериализатор пользователя с рецептами и количеством."""
+    """Отображение подписки с информацией о пользователе + рецептах."""
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -157,7 +157,7 @@ class UserSubscriptionSerializer(UserInfoSerializer):
     def get_recipes(self, obj):
         request = self.context.get('request')
         limit = request.query_params.get('recipes_limit')
-        recipes_qs = obj.recipe_set.all()
+        recipes_qs = obj.recipes.all()
 
         if limit and limit.isdigit():
             recipes_qs = recipes_qs[:int(limit)]
@@ -167,7 +167,7 @@ class UserSubscriptionSerializer(UserInfoSerializer):
         return serializer.data
 
     def get_recipes_count(self, obj):
-        return obj.recipe_set.count()
+        return obj.recipes.count()
 
 
 class TagSerializer(serializers.ModelSerializer):
