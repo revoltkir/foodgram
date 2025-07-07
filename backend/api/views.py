@@ -167,29 +167,34 @@ class CustomUserViewSet(UserViewSet):
 
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, id=None):
-        author = get_object_or_404(FoodgramUser, pk=id)
         user = request.user
-
-        if user == author:
-            return Response({'error': 'Нельзя подписаться на самого себя.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        author = get_object_or_404(FoodgramUser, pk=id)
 
         if request.method == 'POST':
-            if Subscription.objects.filter(user=user, author=author).exists():
-                return Response({'error': 'Вы уже подписаны.'},
-                                status=status.HTTP_400_BAD_REQUEST)
-
             serializer = SubscriptionSerializer(
-                data={'user': user.pk, 'author': author.pk},
+                data={'author': author.pk},
                 context={'request': request}
             )
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # DELETE
-        Subscription.objects.filter(user=user, author=author).delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            response_serializer = UserSubscriptionSerializer(
+                author, context={'request': request}
+            )
+            return Response(response_serializer.data,
+                            status=status.HTTP_201_CREATED)
+
+        # DELETE: отписка
+        subscription = Subscription.objects.filter(user=user,
+                                                   author=author).first()
+        if subscription:
+            subscription.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(
+            {'detail': 'Вы не были подписаны на этого автора.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
