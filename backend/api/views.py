@@ -61,15 +61,13 @@ class RecipeViewSet(ModelViewSet):
         return [perm() for perm in perms]
 
     def get_serializer_class(self):
-        if self.action in (
-                'create', 'update', 'partial_update'
-        ):
+        if self.action in {'create', 'update', 'partial_update'}:
             return RecipeCreateSerializer
-        if self.action in (
-                'favorite', 'shopping_cart', 'delete_favorite',
-                'delete_shopping_cart', 'get_shopping_cart'
-        ):
+        if self.action in {'favorite', 'shopping_cart', 'delete_favorite',
+                           'delete_shopping_cart', 'get_shopping_cart'}:
             return RecipeShortSerializer
+        if self.action == 'get_short_link':
+            return RecipeLinkSerializer
         return RecipeSerializer
 
     def perform_create(self, serializer):
@@ -191,7 +189,6 @@ class CustomUserViewSet(UserViewSet):
             return Response(response_serializer.data,
                             status=status.HTTP_201_CREATED)
 
-        # DELETE: отписка
         subscription = Subscription.objects.filter(user=user,
                                                    author=author).first()
         if subscription:
@@ -218,6 +215,11 @@ class CustomUserViewSet(UserViewSet):
         if 'avatar' not in request.data or not request.data['avatar']:
             return Response({'avatar': 'Необходимо передать файл.'},
                             status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+
+        if user.avatar:
+            user.avatar.delete(save=False)
 
         serializer = SetUserAvatarSerializer(
             instance=request.user,
