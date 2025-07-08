@@ -1,8 +1,7 @@
 from django.db import models
 from django.core.validators import RegexValidator, MinValueValidator, \
     MaxValueValidator
-
-
+from django.urls import reverse
 from .constants import (
     TAG_NAME_MAX_LENGTH, TAG_SLUG_MAX_LENGTH,
     INGREDIENT_NAME_MAX_LENGTH, MEASUREMENT_UNIT_MAX_LENGTH,
@@ -123,6 +122,9 @@ class Recipe(models.Model):
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
         ordering = ['-pub_date']
+
+    def get_absolute_url(self):
+        return f'/recipes/{self.pk}/'
 
     def __str__(self):
         return self.name

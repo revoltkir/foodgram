@@ -312,10 +312,10 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             )
 
         image = self.initial_data.get('image')
-        if not image:
+        if not image and not getattr(self.instance, 'image', None):
             raise serializers.ValidationError(
-                {'image': 'Изображение обязательно.'})
-
+                {'image': 'Изображение обязательно.'}
+            )
         return data
 
     @staticmethod
@@ -369,9 +369,9 @@ class RecipeShortSerializer(serializers.ModelSerializer):
 class RecipeLinkSerializer(serializers.Serializer):
     def to_representation(self, instance):
         request = self.context.get('request')
-        host = request.build_absolute_uri('/')[:-1].strip('/') if request else ''
         return {
-            'short-link': f'{host}/s/{instance.id}'
+            'short-link': request.build_absolute_uri(
+                instance.get_absolute_url())
         }
 
 
