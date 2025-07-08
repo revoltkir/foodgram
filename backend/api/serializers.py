@@ -1,15 +1,14 @@
 from django.contrib.auth.password_validation import validate_password
+from django.core.validators import RegexValidator
+from django.db import transaction
+
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
-from django.db import transaction
-from django.core.validators import RegexValidator
+
 from api.fields import SmartImageField
 from recipes.constants import NAME_MAX_LENGTH
-
-from recipes.models import (
-    Tag, Ingredient, RecipeIngredient,
-    Recipe, Favorite, ShoppingCart
-)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from users.models import FoodgramUser, Subscription
 
 
@@ -171,18 +170,23 @@ class UserSubscriptionSerializer(UserInfoSerializer):
 
 
 class TagSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Tag."""
+
     class Meta:
         model = Tag
         fields = ('id', 'name', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели Ingredient."""
+
     class Meta:
         model = Ingredient
         fields = ('id', 'name', 'measurement_unit')
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """Сериализатор для промежуточной модели ингредиента в рецепте."""
     id = serializers.ReadOnlyField(source='ingredient.id')
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(

@@ -1,9 +1,13 @@
-from django.db.models import Sum, F
 from django.http import HttpResponse
+from django.db.models import Sum, F
 from recipes.models import RecipeIngredient
 
 
 def generate_shopping_cart_text(user):
+    """
+    Генерирует текстовый список покупок для пользователя по его корзине.
+    Возвращает строку или None, если корзина пуста.
+    """
     ingredients = (
         RecipeIngredient.objects
         .filter(recipe__shoppingcart__user=user)
@@ -25,6 +29,10 @@ def generate_shopping_cart_text(user):
 
 
 def download_shopping_cart_response(user):
+    """
+    Возвращает HttpResponse с текстовым файлом списка покупок для пользователя.
+    Если корзина пуста — возвращает None.
+    """
     content = generate_shopping_cart_text(user)
     if not content:
         return None

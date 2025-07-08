@@ -1,28 +1,32 @@
-from rest_framework.viewsets import ReadOnlyModelViewSet, ModelViewSet
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import Recipe, Ingredient, Favorite, ShoppingCart, Tag
-from users.models import FoodgramUser, Subscription
-from .filters import RecipeFilter, IngredientSearchFilter
-from .pagination import LimitPageNumberPagination
-from .permissions import IsSuperuserOrAdminOrAuthorOrReadOnly, ReadOnly
-from .serializers import RecipeSerializer, IngredientSerializer, \
-    RecipeCreateSerializer, RecipeShortSerializer, TagSerializer, \
-    UserSubscriptionSerializer, SubscriptionSerializer, \
-    CreateUserSerializer, UserInfoSerializer, SetPasswordSerializer, \
-    SetUserAvatarSerializer, RecipeLinkSerializer
 
 from djoser.views import UserViewSet
-from rest_framework.decorators import action
-from rest_framework.response import Response
 from rest_framework import filters, status
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-from django.shortcuts import get_object_or_404
 from api.utils.shopping_cart import download_shopping_cart_response
-from .utils.permissions_map import user_permissions, recipe_permissions
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from users.models import FoodgramUser, Subscription
+
+from .filters import IngredientSearchFilter, RecipeFilter
+from .pagination import LimitPageNumberPagination
+from .permissions import ReadOnly
+from .serializers import (CreateUserSerializer, IngredientSerializer,
+                          RecipeCreateSerializer, RecipeLinkSerializer,
+                          RecipeSerializer, RecipeShortSerializer,
+                          SetPasswordSerializer, SetUserAvatarSerializer,
+                          SubscriptionSerializer, TagSerializer,
+                          UserInfoSerializer, UserSubscriptionSerializer)
+from .utils.permissions_map import recipe_permissions, user_permissions
+from .utils.item_action_mixin import ItemActionMixin
 
 
 class TagViewSet(ReadOnlyModelViewSet):
+    """Вьюсет для тегов. Только чтение."""
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     permission_classes = [IsAdminUser | ReadOnly]
@@ -30,6 +34,7 @@ class TagViewSet(ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(ModelViewSet):
+    """Вьюсет для ингредиентов. CRUD + поиск."""
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     permission_classes = [IsAdminUser | ReadOnly]
@@ -38,7 +43,10 @@ class IngredientViewSet(ModelViewSet):
     pagination_class = None
 
 
-class RecipeViewSet(ModelViewSet):
+class RecipeViewSet(ItemActionMixin, ModelViewSet):
+    """
+    Вьюсет для рецептов. CRUD, избранное, корзина, скачивание списка покупок.
+    """
     queryset = Recipe.objects.select_related('author').prefetch_related(
         'tags',
         'recipe_ingredients__ingredient',
@@ -50,7 +58,6 @@ class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
     ordering_fields = ('pub_date',)
     ordering = ('pub_date',)
-
     permission_classes = [AllowAny]
     permission_classes_by_action = recipe_permissions
 
@@ -72,25 +79,6 @@ class RecipeViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
-
-    def add_item(self, model, serializer_class, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        user = request.user
-        if model.objects.filter(user=user, recipe=recipe).exists():
-            return Response({'message': 'Рецепт уже добавлен'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        model.objects.create(user=user, recipe=recipe)
-        serializer = serializer_class(recipe, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def remove_item(self, model, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        item = model.objects.filter(user=request.user, recipe=recipe)
-        if not item.exists():
-            return Response({'message': 'Рецепт не найден в списке.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        item.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'])
     def favorite(self, request, pk=None):

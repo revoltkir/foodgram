@@ -3,6 +3,9 @@ from recipes.models import Recipe, Ingredient, Tag
 
 
 class RecipeFilter(filters.FilterSet):
+    """
+    Фильтр для рецептов по тегам, автору, избранному и корзине.
+    """
     is_favorited = filters.BooleanFilter(
         method='filter_is_favorited',
         label='В избранном'
@@ -41,6 +44,7 @@ class RecipeFilter(filters.FilterSet):
 
 
 class IngredientSearchFilter(filters.FilterSet):
+    """Фильтр для поиска ингредиентов по началу имени."""
     name = filters.CharFilter(method='filter_name_startswith')
 
     class Meta:

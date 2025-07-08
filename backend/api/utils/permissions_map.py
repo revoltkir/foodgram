@@ -1,6 +1,7 @@
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from api.permissions import IsSuperuserOrAdminOrAuthorOrReadOnly
 
+# user_permissions: права доступа для действий с пользователем
 user_permissions = {
     'me': [IsAuthenticated],
     'set_password': [IsAuthenticated],
@@ -10,6 +11,7 @@ user_permissions = {
     'delete_avatar': [IsAuthenticated],
 }
 
+# recipe_permissions: права доступа для действий с рецептами
 recipe_permissions = {
     'create': [IsAuthenticated],
     'update': [IsSuperuserOrAdminOrAuthorOrReadOnly],

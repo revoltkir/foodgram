@@ -8,6 +8,10 @@ MAX_LENGTH_USERNAME = 150
 
 
 class FoodgramUser(AbstractUser):
+    """
+    Кастомная модель пользователя для Foodgram.
+    Авторизация по email, поддержка аватара.
+    """
 
     email = models.EmailField(
         'email-адрес',
@@ -45,7 +49,7 @@ class FoodgramUser(AbstractUser):
 
 
 class Subscription(models.Model):
-
+    """Модель подписки пользователя на автора."""
     user = models.ForeignKey(
         FoodgramUser,
         related_name='subscriber',
