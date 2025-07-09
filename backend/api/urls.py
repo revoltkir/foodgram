@@ -17,7 +17,7 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    import debug_toolbar
+    import debug_toolbar  # noqa: F401
 
     urlpatterns += [
         path('auth/', include('rest_framework.urls')),

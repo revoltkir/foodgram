@@ -1,18 +1,18 @@
 version: '3.3'
 
 volumes:
-  pg_data:
+  pg_data_production:
   backend_static:
   media:
 
 services:
   db:
-    image: postgres:13
+    image: postgres:13.10
     env_file: .env
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - pg_data_production:/var/lib/postgresql/data
   backend:
-    build: ./backend/
+    image: revoltkir/foodgram-backend
     env_file: .env
     volumes:
       - backend_static:/app/collect_static/
@@ -22,12 +22,12 @@ services:
   frontend:
     container_name: foodgram-front
     env_file: .env
-    build: ./frontend/
+    image: revoltkir/foodgram-frontend
     volumes:
       - ./frontend/:/app/result_build/
 
   gateway:
-    build: ./nginx/
+    image: revoltkir/foodgram-gateway
     env_file: .env
     ports:
       - "80:80"
