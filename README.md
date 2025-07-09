@@ -50,10 +50,9 @@
 ### 🔧 Клонирование
 
 ```bash
-git clone https://github.com/revoltkir/foodgram.git
-cd foodgram
+git clone git@github.com:revoltkir/foodgram.git
 ```
-так же не обходимо создать .env
+создайте .env
 ```commandline
 пример заполнения .env
 POSTGRES_DB=postgres
