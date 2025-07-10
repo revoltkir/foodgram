@@ -191,27 +191,25 @@ class CustomUserViewSet(UserViewSet):
 
     @action(detail=False, methods=['get'])
     def subscriptions(self, request):
-        subscriptions = Subscription.objects.filter(user=request.user)
-        authors = [sub.author for sub in subscriptions]
+        author_ids = Subscription.objects.filter(user=request.user) \
+            .values_list('author_id', flat=True)
+
+        authors = FoodgramUser.objects.filter(id__in=author_ids)
         page = self.paginate_queryset(authors)
-        serializer = UserSubscriptionSerializer(page, many=True, context={
-            'request': request})
+        serializer = UserSubscriptionSerializer(page, many=True,
+                                                context={'request': request})
         return self.get_paginated_response(serializer.data)
 
     @action(detail=False, methods=['post', 'put', 'patch'],
             url_path='me/avatar')
     def set_avatar(self, request):
-        if 'avatar' not in request.data or not request.data['avatar']:
-            return Response({'avatar': 'Необходимо передать файл.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
         user = request.user
 
         if user.avatar:
             user.avatar.delete(save=False)
 
         serializer = SetUserAvatarSerializer(
-            instance=request.user,
+            instance=user,
             data=request.data,
             context={'request': request},
             partial=True

@@ -78,16 +78,14 @@ class UserInfoSerializer(serializers.ModelSerializer):
         if not user or user.is_anonymous:
             return False
 
-        if not hasattr(self, '_subscribed_ids'):
-            self._subscribed_ids = set(
-                Subscription.objects.filter(user=user).values_list('author_id',
-                                                                   flat=True)
-            )
-        return obj.id in self._subscribed_ids
+        return Subscription.objects.filter(user=user, author=obj).exists()
 
 
 class SetUserAvatarSerializer(serializers.ModelSerializer):
-    avatar = SmartImageField()
+    avatar = SmartImageField(
+        required=True,
+        error_messages={'required': 'Необходимо передать файл.'}
+    )
 
     class Meta:
         model = FoodgramUser
@@ -229,16 +227,10 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         user = getattr(request, 'user', None)
-        if not user or not user.is_authenticated:
+        if not user or user.is_anonymous:
             return False
 
-        if not hasattr(self, '_shopping_cart_ids'):
-            self._shopping_cart_ids = set(
-                ShoppingCart.objects.filter(user=user).values_list('recipe_id',
-                                                                   flat=True)
-            )
-
-        return obj.id in self._shopping_cart_ids
+        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
 
 class RecipeIngredientCreateSerializer(serializers.Serializer):

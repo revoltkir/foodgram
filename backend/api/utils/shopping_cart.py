@@ -15,7 +15,7 @@ def generate_shopping_cart_text(user):
             name=F('ingredient__name'),
             unit=F('ingredient__measurement_unit')
         )
-        .annotate(amount=Sum('amount'))
+        .annotate(total_amount=Sum('amount'))
         .order_by('name')
     )
 
