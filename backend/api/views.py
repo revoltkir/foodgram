@@ -5,7 +5,7 @@ from djoser.views import UserViewSet
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from rest_framework import filters, status
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAdminUser
+from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from users.models import FoodgramUser, Subscription
@@ -94,16 +94,19 @@ class RecipeViewSet(ItemActionMixin, ModelViewSet):
     def delete_shopping_cart(self, request, pk=None):
         return self.remove_item(ShoppingCart, request, pk)
 
-    @action(detail=False, methods=['get'])
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated]
+    )
     def download_shopping_cart(self, request):
-        if not request.user.is_authenticated:
-            return Response({'detail': 'Требуется авторизация.'},
-                            status=status.HTTP_401_UNAUTHORIZED)
         response = download_shopping_cart_response(request.user)
         if not response:
-            return Response({'detail': 'Корзина пуста.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        return response  # <- response уже сам корректный
+            return Response(
+                {'detail': 'Корзина пуста.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return response
 
     @action(detail=False, methods=['get'], url_path='shopping_cart')
     def get_shopping_cart(self, request):
