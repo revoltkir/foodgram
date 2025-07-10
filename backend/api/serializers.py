@@ -1,14 +1,12 @@
+from api.fields import SmartImageField
 from django.contrib.auth.password_validation import validate_password
 from django.core.validators import RegexValidator
 from django.db import transaction
-
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
-
-from api.fields import SmartImageField
 from recipes.constants import NAME_MAX_LENGTH
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 from users.models import FoodgramUser, Subscription
 
 

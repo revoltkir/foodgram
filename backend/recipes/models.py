@@ -1,15 +1,12 @@
+from django.core.validators import (MaxValueValidator, MinValueValidator,
+                                    RegexValidator)
 from django.db import models
-from django.core.validators import RegexValidator, MinValueValidator, \
-    MaxValueValidator
-
-from .constants import (
-    TAG_NAME_MAX_LENGTH, TAG_SLUG_MAX_LENGTH,
-    INGREDIENT_NAME_MAX_LENGTH, MEASUREMENT_UNIT_MAX_LENGTH,
-    RECIPE_NAME_MAX_LENGTH, COOKING_TIME_MIN,
-    INGREDIENT_AMOUNT_MIN, INGREDIENT_AMOUNT_MAX
-)
-
 from users.models import FoodgramUser
+
+from .constants import (COOKING_TIME_MIN, INGREDIENT_AMOUNT_MAX,
+                        INGREDIENT_AMOUNT_MIN, INGREDIENT_NAME_MAX_LENGTH,
+                        MEASUREMENT_UNIT_MAX_LENGTH, RECIPE_NAME_MAX_LENGTH,
+                        TAG_NAME_MAX_LENGTH, TAG_SLUG_MAX_LENGTH)
 
 
 class Tag(models.Model):
