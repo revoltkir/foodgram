@@ -24,7 +24,8 @@ def generate_shopping_cart_text(user):
 
     lines = ['Список покупок:\n']
     for item in ingredients:
-        lines.append(f"• {item['name']} ({item['unit']}) — {item['amount']}")
+        lines.append(f"• {item['name']} ({item['unit']})"
+                     f" — {item['total_amount']}")
     return '\n'.join(lines)
 
 
