@@ -17,6 +17,10 @@ DEBUG = os.getenv('DEBUG', default='false').lower() in ('true', '1')
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 # Application definition
 
 INSTALLED_APPS = [
