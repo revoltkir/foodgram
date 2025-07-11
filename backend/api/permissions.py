@@ -21,7 +21,9 @@ class IsSuperuserOrAdminOrAuthorOrReadOnly(permissions.BasePermission):
 
 
 class ReadOnly(permissions.BasePermission):
-    """Разрешает только SAFE_METHODS, иначе 405 Method Not Allowed."""
+    """
+    Разрешает только SAFE_METHODS, иначе 405 Method Not Allowed.
+    """
 
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
