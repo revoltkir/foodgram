@@ -1,5 +1,6 @@
-from api.permissions import IsSuperuserOrAdminOrAuthorOrReadOnly
 from rest_framework.permissions import IsAuthenticated
+
+from api.permissions import IsSuperuserOrAdminOrAuthorOrReadOnly
 
 # user_permissions: права доступа для действий с пользователем
 user_permissions = {
