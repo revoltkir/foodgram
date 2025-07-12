@@ -5,9 +5,16 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from api.fields import SmartImageField
+from api.utils.auth_context_mixin import AuthContextMixin
 from recipes.constants import NAME_MAX_LENGTH
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Tag,
+)
 from users.models import FoodgramUser, Subscription
 
 
@@ -56,7 +63,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return user
 
 
-class UserInfoSerializer(serializers.ModelSerializer):
+class UserInfoSerializer(AuthContextMixin, serializers.ModelSerializer):
     """Сериализатор пользователя с флагом подписки."""
     is_subscribed = serializers.SerializerMethodField()
     avatar = SmartImageField(read_only=True, required=False, allow_null=True)
@@ -74,11 +81,9 @@ class UserInfoSerializer(serializers.ModelSerializer):
         return rep
 
     def get_is_subscribed(self, obj):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        if not user or user.is_anonymous:
+        user = self.get_authenticated_user()
+        if not user:
             return False
-
         return Subscription.objects.filter(user=user, author=obj).exists()
 
 
@@ -194,7 +199,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeSerializer(AuthContextMixin, serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(source='recipe_ingredients',
                                              many=True, read_only=True)
@@ -212,25 +217,15 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def get_is_favorited(self, obj):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        if not user or not user.is_authenticated:
+        user = self.get_authenticated_user()
+        if not user:
             return False
-
-        if not hasattr(self, '_favorite_ids'):
-            self._favorite_ids = set(
-                Favorite.objects.filter(user=user).values_list('recipe_id',
-                                                               flat=True)
-            )
-
-        return obj.id in self._favorite_ids
+        return Favorite.objects.filter(user=user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        if not user or user.is_anonymous:
+        user = self.get_authenticated_user()
+        if not user:
             return False
-
         return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
 

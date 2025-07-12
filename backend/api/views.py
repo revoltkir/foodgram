@@ -14,12 +14,20 @@ from users.models import FoodgramUser, Subscription
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPageNumberPagination
 from .permissions import ReadOnly
-from .serializers import (CreateUserSerializer, IngredientSerializer,
-                          RecipeCreateSerializer, RecipeLinkSerializer,
-                          RecipeSerializer, RecipeShortSerializer,
-                          SetPasswordSerializer, SetUserAvatarSerializer,
-                          SubscriptionSerializer, TagSerializer,
-                          UserInfoSerializer, UserSubscriptionSerializer)
+from .serializers import (
+    CreateUserSerializer,
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeLinkSerializer,
+    RecipeSerializer,
+    RecipeShortSerializer,
+    SetPasswordSerializer,
+    SetUserAvatarSerializer,
+    SubscriptionSerializer,
+    TagSerializer,
+    UserInfoSerializer,
+    UserSubscriptionSerializer,
+)
 from .utils.item_action_mixin import ItemActionMixin
 from .utils.permissions_map import recipe_permissions, user_permissions
 
