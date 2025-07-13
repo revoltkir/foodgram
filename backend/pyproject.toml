@@ -3,3 +3,4 @@ profile = "black"
 line_length = 79
 known_first_party = ["users", "recipes", "api"]
 known_third_party = ["django", "rest_framework"]
+no_lines_before = ["LOCALFOLDER"]

@@ -10,7 +10,6 @@ from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 from api.utils.shopping_cart import download_shopping_cart_response
 from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import FoodgramUser, Subscription
-
 from .filters import IngredientSearchFilter, RecipeFilter
 from .pagination import LimitPageNumberPagination
 from .permissions import ReadOnly

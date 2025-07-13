@@ -6,7 +6,6 @@ from django.core.validators import (
 from django.db import models
 
 from users.models import FoodgramUser
-
 from .constants import (
     COOKING_TIME_MIN,
     INGREDIENT_AMOUNT_MAX,
